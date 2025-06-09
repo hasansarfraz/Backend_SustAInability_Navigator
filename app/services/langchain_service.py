@@ -17,7 +17,7 @@ class EnhancedLangChainService:
         
         if self.openai_api_key and self.openai_api_key != "fallback-key":
             self.llm = ChatOpenAI(
-                model="gpt-4",
+                model="gpt-3.5-turbo",
                 temperature=0.7,
                 max_tokens=500,
                 openai_api_key=self.openai_api_key
