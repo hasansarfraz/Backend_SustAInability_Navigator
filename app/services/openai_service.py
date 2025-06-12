@@ -7,7 +7,7 @@ from app.models.personas import PersonaConfig, PersonaType
 class OpenAIService:
     def __init__(self):
         openai.api_key = settings.openai_api_key
-        self.model = "gpt-4"
+        self.model = "gpt-3.5-turbo"
         
     def get_persona_system_prompt(self, persona: PersonaType) -> str:
         """Generate system prompt based on persona"""
