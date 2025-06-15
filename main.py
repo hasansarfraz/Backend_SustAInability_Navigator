@@ -1,36 +1,54 @@
+# main.py - Complete updated version with RAG, Auth, and all new endpoints
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
 import logging
 from dotenv import load_dotenv
+import os
 
+# Import all routers
 from app.routes.chat import router as chat_router
 from app.routes.dbo import router as dbo_router
 from app.routes.analytics import router as analytics_router
 from app.routes.integration import router as integration_router
+from app.services.auth_service import auth_router
+
+# Import services
 from app.services.dbo_service import dbo_service
-from app.services.langchain_service import langchain_service
+from app.services.rag_agent_service import rag_agent  # New RAG service instead of LangChain
 from app.services.xcelerator_service import xcelerator_service
+from app.services.supabase_service import db_service
 
 # Load environment variables
 load_dotenv()
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger(__name__)
 
+# Create FastAPI app
 app = FastAPI(
-    title="SustAInability Navigator - Enhanced Siemens Integration",
-    description="AI-powered sustainability assistant bridging DBO Tool outputs with Siemens Xcelerator Marketplace",
-    version="2.1.0",
+    title="SustAInability Navigator - RAG Enhanced with Supabase",
+    description="AI-powered sustainability assistant with RAG architecture, structured responses, and authentication",
+    version="3.0.0",
     docs_url="/docs",
     redoc_url="/redoc"
 )
 
-# CORS settings
+# CORS settings - Updated for frontend integration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://spectacular-dusk-cc7b08.netlify.app", "http://localhost:3000", "*"],
+    allow_origins=[
+        "https://spectacular-dusk-cc7b08.netlify.app",  # Frontend
+        "http://localhost:3000",  # Local frontend development
+        "http://localhost:3001",  # Alternative local port
+        "http://localhost:5173",  # Vite default port
+        "*"  # Be careful with this in production
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -39,118 +57,272 @@ app.add_middleware(
 @app.get("/")
 def read_root():
     return {
-        "message": "SustAInability Navigator - Enhanced Siemens Integration",
-        "version": "2.1.0",
+        "message": "SustAInability Navigator - RAG Enhanced Version",
+        "version": "3.0.0",
         "status": "healthy",
+        "architecture": "RAG with Embeddings (No LangChain)",
         "features": [
-            "DBO Tool Integration", 
-            "Xcelerator Marketplace Matching", 
-            "User Proficiency Assessment",
-            "LangChain AI", 
-            "Enhanced DBO Scenarios", 
+            "RAG-based Agent with Embeddings",
+            "5-Cluster Security System",
+            "Structured Chat Responses",
+            "User Authentication (JWT)",
+            "Supabase Database Integration",
+            "Chat History Management",
+            "DBO Tool Integration",
+            "Xcelerator Marketplace Matching",
             "Persona Intelligence"
         ],
-        "workflow": "DBO Tool Output → User Profile Assessment → Optimal Xcelerator Solutions",
-        "integration_points": {
-            "dbo_tool": "https://www.dbo.siemens.com/",
-            "xcelerator_marketplace": "https://xcelerator.siemens.com/global/en/all-offerings.html",
-            "frontend_ui": "https://spectacular-dusk-cc7b08.netlify.app"
+        "api_endpoints": {
+            "authentication": {
+                "login": "POST /auth/login",
+                "register": "POST /auth/register",
+                "me": "GET /auth/me"
+            },
+            "chat": {
+                "chat": "POST /chat/",
+                "history": "GET /get_chat_history/{chat_ID}",
+                "list": "GET /get_chats/"
+            },
+            "user": {
+                "save_params": "POST /save_user_info/",
+                "get_params": "GET /get_user_info/"
+            },
+            "dbo": {
+                "scenarios": "GET /api/v1/dbo/scenarios",
+                "scenario_detail": "POST /api/v1/dbo/scenario",
+                "search": "GET /api/v1/dbo/scenarios/search"
+            },
+            "system": {
+                "health": "GET /health",
+                "info": "GET /api/v1/system/info"
+            }
+        },
+        "security": {
+            "authentication": "JWT-based",
+            "prompt_security": "5-cluster system",
+            "jailbreak_protection": "Active",
+            "role_boundaries": "Enforced"
         }
     }
 
 @app.get("/health")
 def health_check():
+    """Enhanced health check with all services status"""
+    
+    # Check RAG agent status
+    rag_status = "operational"
+    try:
+        if hasattr(rag_agent, 'dbo_embeddings') and len(rag_agent.dbo_embeddings) > 0:
+            rag_status = "operational"
+        else:
+            rag_status = "degraded"
+    except:
+        rag_status = "error"
+    
+    # Check database status
+    db_status = "operational"
+    try:
+        # You might want to add a simple DB health check here
+        if db_service and hasattr(db_service, 'client'):
+            db_status = "operational"
+        else:
+            db_status = "not_initialized"
+    except:
+        db_status = "error"
+    
     return {
         "status": "healthy",
-        "timestamp": datetime.now(),
+        "timestamp": datetime.now().isoformat(),
+        "version": "3.0.0",
         "services": {
-            "dbo_service": "operational",
-            "langchain_service": "operational" if langchain_service.use_ai else "fallback_mode",
-            "xcelerator_service": "operational",
-            "scenarios_loaded": len(dbo_service.scenarios),
-            "xcelerator_products": len(xcelerator_service.xcelerator_catalog)
+            "rag_agent": rag_status,
+            "embeddings": {
+                "dbo_scenarios": len(getattr(rag_agent, 'dbo_embeddings', {})),
+                "xcelerator_products": len(getattr(rag_agent, 'product_embeddings', {}))
+            },
+            "database": db_status,
+            "dbo_service": "operational" if dbo_service else "error",
+            "xcelerator_service": "operational" if xcelerator_service else "error",
+            "scenarios_loaded": len(dbo_service.scenarios) if dbo_service else 0,
+            "xcelerator_products": len(xcelerator_service.xcelerator_catalog) if xcelerator_service else 0
         },
         "integration_status": {
-            "dbo_scenarios": f"{len(dbo_service.scenarios)} example outputs loaded",
-            "xcelerator_catalog": f"{len(xcelerator_service.xcelerator_catalog)} products available",
-            "user_proficiency_assessment": "enabled",
-            "ai_recommendations": "enabled" if langchain_service.use_ai else "fallback_mode"
+            "dbo_scenarios": f"{len(dbo_service.scenarios) if dbo_service else 0} scenarios loaded",
+            "xcelerator_catalog": f"{len(xcelerator_service.xcelerator_catalog) if xcelerator_service else 0} products available",
+            "ai_architecture": "RAG with embeddings",
+            "security_model": "5-cluster system",
+            "structured_responses": "enabled",
+            "user_profiles": "enabled",
+            "chat_persistence": "enabled",
+            "authentication": "JWT-based"
+        },
+        "configuration": {
+            "external_access": getattr(rag_agent, 'external_access_enabled', False),
+            "strict_boundaries": getattr(rag_agent, 'strict_role_boundaries', True),
+            "cache_enabled": True,
+            "embedding_model": getattr(rag_agent, 'embedding_model', 'unknown'),
+            "chat_model": getattr(rag_agent, 'chat_model', 'unknown')
         }
     }
 
-@app.get("/api/v1/workflow/overview")
-def get_workflow_overview():
-    """Get overview of the complete DBO → Xcelerator workflow"""
+@app.get("/api/v1/system/info")
+def get_system_info():
+    """System information for frontend initialization"""
     return {
-        "workflow_description": "Intelligent bridge between Siemens DBO Tool and Xcelerator Marketplace",
-        "process_steps": [
+        "available_personas": [
+            {"id": "zuri", "name": "Zuri", "description": "Enterprise Sustainability Leader"},
+            {"id": "amina", "name": "Amina", "description": "Cost-Conscious Business Owner"},
+            {"id": "bjorn", "name": "Björn", "description": "Siemens Customer"},
+            {"id": "arjun", "name": "Arjun", "description": "Sustainability Champion"},
+            {"id": "general", "name": "General", "description": "Default Assistant"}
+        ],
+        "available_actions": [
             {
-                "step": 1,
-                "name": "DBO Tool Analysis",
-                "description": "SMEs use Siemens DBO Tool to analyze sustainability scenarios",
-                "input": "Business requirements and constraints",
-                "output": "Optimized scenario recommendations (JSON format)",
-                "example_scenarios": list(dbo_service.scenarios.keys())
+                "action_type": "select_dbo_scenario",
+                "description": "Explore a specific DBO scenario",
+                "icon": "folder"
             },
             {
-                "step": 2,
-                "name": "User Proficiency Assessment", 
-                "description": "Assess user capabilities and preferences",
-                "input": "Sustainability proficiency, tech proficiency, communication style, compliance needs",
-                "output": "Personalized implementation approach",
-                "assessment_methods": ["Web UI settings", "Chat/voice bot interaction"]
+                "action_type": "contact_expert",
+                "description": "Connect with a Siemens expert",
+                "icon": "user"
             },
             {
-                "step": 3,
-                "name": "Xcelerator Matching",
-                "description": "AI-powered matching to optimal Siemens Xcelerator solutions",
-                "input": "DBO output + User profile",
-                "output": "Ranked Xcelerator product recommendations with implementation guidance",
-                "marketplace_url": "https://xcelerator.siemens.com/global/en/all-offerings.html"
+                "action_type": "provide_information",
+                "description": "Provide additional information",
+                "icon": "info"
             },
             {
-                "step": 4,
-                "name": "Implementation Planning",
-                "description": "Generate implementation roadmap and next steps",
-                "input": "Selected solutions + User profile",
-                "output": "Detailed implementation plan with financing options",
-                "support_options": ["Siemens consulting", "Training programs", "Financial services"]
+                "action_type": "use_tool",
+                "description": "Use a sustainability tool",
+                "icon": "tool"
+            },
+            {
+                "action_type": "browse",
+                "description": "Browse scenarios or products",
+                "icon": "search"
             }
         ],
-        "key_benefits": [
-            "Intelligent product matching based on actual DBO outputs",
-            "Proficiency-aware implementation guidance",
-            "Complete Siemens ecosystem integration",
-            "Financial modeling and ROI optimization",
-            "Regulatory compliance alignment"
-        ]
+        "supported_languages": ["en"],  # Can be extended later
+        "features": {
+            "dbo_scenarios": True,
+            "xcelerator_marketplace": True,
+            "rag_search": True,
+            "embeddings": True,
+            "chat_history": True,
+            "user_profiles": True,
+            "authentication": True,
+            "carbon_calculator": False,  # Coming soon
+            "roi_calculator": False,     # Coming soon
+            "expert_chat": True
+        },
+        "security_features": {
+            "jailbreak_protection": True,
+            "prompt_integrity": True,
+            "role_boundaries": True,
+            "audit_logging": True,
+            "data_privacy": True
+        },
+        "api_version": "3.0.0",
+        "build_date": datetime.now().strftime("%Y-%m-%d")
     }
 
 # Include routers
-app.include_router(chat_router, prefix="/api/v1/chat", tags=["Chat & AI"])
+# Authentication routes (no prefix as per standard practice)
+app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
+
+# Chat routes at root level as per FrontEnd's specification
+app.include_router(chat_router, prefix="", tags=["Chat & User Management"])
+
+# API versioned routes
 app.include_router(dbo_router, prefix="/api/v1/dbo", tags=["DBO Scenarios"])
 app.include_router(analytics_router, prefix="/api/v1/analytics", tags=["Analytics"])
 app.include_router(integration_router, prefix="/api/v1/integration", tags=["Siemens Integration"])
 
+# Startup event
+@app.on_event("startup")
+async def startup_event():
+    """Initialize services on startup"""
+    logger.info("=" * 70)
+    logger.info("🚀 Starting SustAInability Navigator - RAG Enhanced Version")
+    logger.info("=" * 70)
+    
+    # Check environment variables
+    env_vars = {
+        "OPENAI_API_KEY": os.getenv("OPENAI_API_KEY", "not_set"),
+        "SUPABASE_URL": os.getenv("SUPABASE_URL", "not_set"),
+        "SUPABASE_ANON_KEY": os.getenv("SUPABASE_ANON_KEY", "not_set"),
+        "JWT_SECRET_KEY": os.getenv("JWT_SECRET_KEY", "not_set")
+    }
+    
+    # Log configuration status
+    logger.info("📋 Configuration Status:")
+    for var, value in env_vars.items():
+        status = "✅" if value != "not_set" else "❌"
+        logger.info(f"   {status} {var}: {'Set' if value != 'not_set' else 'Not Set'}")
+    
+    # Log service status
+    logger.info("\n🔧 Service Status:")
+    logger.info(f"   🌱 DBO Scenarios: {len(dbo_service.scenarios) if dbo_service else 0} loaded")
+    logger.info(f"   🛒 Xcelerator Products: {len(xcelerator_service.xcelerator_catalog) if xcelerator_service else 0} available")
+    logger.info(f"   🤖 RAG Agent: {'Initialized' if rag_agent else 'Not Initialized'}")
+    logger.info(f"   📊 Embeddings: {len(getattr(rag_agent, 'dbo_embeddings', {}))} DBO, {len(getattr(rag_agent, 'product_embeddings', {}))} products")
+    logger.info(f"   🗄️  Database: {'Connected' if db_service else 'Not Connected'}")
+    logger.info(f"   🔐 Authentication: Enabled")
+    logger.info(f"   💬 Chat System: Structured responses enabled")
+    logger.info(f"   🛡️  Security: 5-cluster system active")
+    
+    # Log architecture info
+    logger.info("\n🏗️  Architecture:")
+    logger.info("   - RAG with embeddings (no LangChain)")
+    logger.info("   - Semantic search for scenarios and products")
+    logger.info("   - ReAct-style agent reasoning")
+    logger.info("   - Supabase for data persistence")
+    logger.info("   - JWT-based authentication")
+    
+    # Log key features
+    logger.info("\n✨ Key Features:")
+    logger.info("   ✅ Structured responses for frontend")
+    logger.info("   ✅ Chat history with GET endpoint")
+    logger.info("   ✅ User profile management")
+    logger.info("   ✅ Persona-aware responses")
+    logger.info("   ✅ Jailbreak protection")
+    logger.info("   ✅ Professional boundaries enforced")
+    
+    logger.info("=" * 70)
+    logger.info("🎯 Ready for Siemens presentation!")
+    logger.info("📝 API Documentation: http://localhost:8000/docs")
+    logger.info("=" * 70)
+
+# Shutdown event
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Cleanup on shutdown"""
+    logger.info("Shutting down SustAInability Navigator")
+    
+    # Clean up any open connections
+    if hasattr(rag_agent, 'conversation_memory'):
+        logger.info(f"Clearing {len(rag_agent.conversation_memory)} conversation memories")
+        rag_agent.conversation_memory.clear()
+    
+    # Clear response cache
+    if hasattr(rag_agent, 'response_cache'):
+        logger.info(f"Clearing {len(rag_agent.response_cache)} cached responses")
+        rag_agent.response_cache.clear()
+    
+    logger.info("Shutdown complete")
+
 if __name__ == "__main__":
     import uvicorn
     
-    # Log startup information
-    logger.info("Starting SustAInability Navigator - Enhanced Siemens Integration")
-    logger.info("=" * 70)
-    logger.info(f"🌱 DBO Scenarios loaded: {len(dbo_service.scenarios)}")
-    logger.info(f"🛒 Xcelerator products available: {len(xcelerator_service.xcelerator_catalog)}")
-    logger.info(f"🤖 LangChain AI: {'Enabled' if langchain_service.use_ai else 'Fallback mode'}")
-    logger.info(f"🔗 DBO Tool integration: Ready")
-    logger.info(f"🛍️  Xcelerator marketplace integration: Ready")
-    logger.info(f"👤 User proficiency assessment: Enabled")
-    logger.info("=" * 70)
-    logger.info("🚀 Ready for SME → DBO → Xcelerator workflow!")
+    # Get port from environment or default
+    port = int(os.getenv("PORT", 8000))
     
+    # Run with auto-reload for development
     uvicorn.run(
-        app, 
+        "main:app",  # Use string to enable auto-reload
         host="0.0.0.0", 
-        port=8000,
-        log_level="info",
-        reload=False
+        port=port,
+        reload=True if os.getenv("ENVIRONMENT", "development") == "development" else False,
+        log_level="info"
     )
