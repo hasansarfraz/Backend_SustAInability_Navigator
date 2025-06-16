@@ -85,18 +85,19 @@ class SupabaseService:
     async def get_user_id_from_chat(self, chat_id: str) -> str:
         """Get user ID associated with a chat session."""
         try:
-            response = self.client.table('chats').select('user_id').eq('chat_id', chat_id).single().execute()
+            response = self.client.table('chats').select('user_id').eq('chat_id', chat_id).execute()
             
-            if response.data:
-                return response.data['user_id']
+            if response.data and len(response.data) > 0:
+                return response.data[0]['user_id']
             else:
-                # For new chats, you might want to create a new user or use session
-                logger.warning(f"No user found for chat {chat_id}")
+                # For new chats, create an anonymous user
+                logger.warning(f"No user found for chat {chat_id}, creating anonymous user")
                 return await self._create_anonymous_user()
                 
         except Exception as e:
             logger.error(f"Error getting user from chat: {e}")
-            raise
+            # If error, create anonymous user as fallback
+            return await self._create_anonymous_user()
     
     async def get_user_params(self, user_id: str) -> Dict:
         """Retrieve user parameters from database."""

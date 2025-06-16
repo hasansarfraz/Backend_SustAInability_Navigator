@@ -67,10 +67,10 @@ class CompleteEndpointTester:
         self.print_error("Could not wake up service!")
         return False
     
-    # TEST JONAS'S ENDPOINTS SPECIFICALLY
-    def test_jonas_endpoints(self):
-        """Test all endpoints specified by Jonas"""
-        self.print_header("JONAS'S REQUIRED ENDPOINTS")
+    # TEST FE'S ENDPOINTS SPECIFICALLY
+    def test_FE_endpoints(self):
+        """Test all endpoints specified by FE"""
+        self.print_header("FE'S REQUIRED ENDPOINTS")
         
         # 1. Test Authentication Flow First
         self.print_test("Authentication Flow (Required for user management)")
@@ -107,7 +107,7 @@ class CompleteEndpointTester:
             return
         
         # 2. Test Save User Info
-        self.print_test("POST /save_user_info/ (Jonas's requirement)")
+        self.print_test("POST /save_user_info/ (FE's requirement)")
         try:
             response = requests.post(
                 f"{self.base_url}/save_user_info/",
@@ -137,7 +137,7 @@ class CompleteEndpointTester:
             self.test_results['save_user_info'] = False
         
         # 3. Test Get User Info
-        self.print_test("GET /get_user_info/ (Jonas's requirement)")
+        self.print_test("GET /get_user_info/ (FE's requirement)")
         try:
             response = requests.get(
                 f"{self.base_url}/get_user_info/",
@@ -161,7 +161,7 @@ class CompleteEndpointTester:
             self.test_results['get_user_info'] = False
         
         # 4. Test Main Chat Endpoint
-        self.print_test("POST /chat/ (Jonas's main requirement)")
+        self.print_test("POST /chat/ (FE's main requirement)")
         self.test_chat_id = f"test_chat_{int(time.time())}"
         
         try:
@@ -229,10 +229,10 @@ class CompleteEndpointTester:
                 self.print_error(f"Second message error: {e}")
                 self.test_results['chat_conversation'] = False
         
-        # 5. Test Get Chat History (NEW ENDPOINT Jonas requested)
+        # 5. Test Get Chat History (NEW ENDPOINT FE requested)
         if self.test_chat_id:
             time.sleep(2)  # Ensure messages are saved
-            self.print_test("GET /get_chat_history/{chat_ID} (Jonas's NEW requirement)")
+            self.print_test("GET /get_chat_history/{chat_ID} (FE's NEW requirement)")
             
             try:
                 response = requests.get(
@@ -261,7 +261,7 @@ class CompleteEndpointTester:
                 self.test_results['chat_history'] = False
         
         # 6. Test Get Chats List
-        self.print_test("GET /get_chats/ (Jonas's requirement)")
+        self.print_test("GET /get_chats/ (FE's requirement)")
         start_date = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
         
         try:
@@ -367,7 +367,7 @@ class CompleteEndpointTester:
     
     # GENERATE COMPREHENSIVE REPORT
     def generate_report(self):
-        """Generate test report with specific focus on Jonas's requirements"""
+        """Generate test report with specific focus on FE's requirements"""
         self.print_header("TEST REPORT")
         
         # Calculate totals
@@ -376,8 +376,8 @@ class CompleteEndpointTester:
         failed_tests = total_tests - passed_tests
         success_rate = (passed_tests / total_tests * 100) if total_tests > 0 else 0
         
-        # Jonas's specific endpoints
-        jonas_endpoints = [
+        # FE's specific endpoints
+        FE_endpoints = [
             'auth_register',  # Needed for user management
             'chat_main',
             'save_user_info',
@@ -386,9 +386,9 @@ class CompleteEndpointTester:
             'chat_history'
         ]
         
-        jonas_passed = sum(1 for test in jonas_endpoints if self.test_results.get(test, False))
-        jonas_total = len(jonas_endpoints)
-        jonas_success_rate = (jonas_passed / jonas_total * 100) if jonas_total > 0 else 0
+        FE_passed = sum(1 for test in FE_endpoints if self.test_results.get(test, False))
+        FE_total = len(FE_endpoints)
+        FE_success_rate = (FE_passed / FE_total * 100) if FE_total > 0 else 0
         
         print(f"\n{Fore.YELLOW}📊 Overall Results:{Style.RESET_ALL}")
         print(f"   Total tests: {total_tests}")
@@ -396,14 +396,14 @@ class CompleteEndpointTester:
         print(f"   Failed: {failed_tests} ❌")
         print(f"   Success rate: {success_rate:.1f}%")
         
-        print(f"\n{Fore.YELLOW}📋 Jonas's Endpoints:{Style.RESET_ALL}")
-        print(f"   Required endpoints: {jonas_total}")
-        print(f"   Passed: {jonas_passed} ✅")
-        print(f"   Failed: {jonas_total - jonas_passed} ❌")
-        print(f"   Success rate: {jonas_success_rate:.1f}%")
+        print(f"\n{Fore.YELLOW}📋 FE's Endpoints:{Style.RESET_ALL}")
+        print(f"   Required endpoints: {FE_total}")
+        print(f"   Passed: {FE_passed} ✅")
+        print(f"   Failed: {FE_total - FE_passed} ❌")
+        print(f"   Success rate: {FE_success_rate:.1f}%")
         
-        # List Jonas's endpoint status
-        print(f"\n{Fore.YELLOW}Jonas's Endpoint Status:{Style.RESET_ALL}")
+        # List FE's endpoint status
+        print(f"\n{Fore.YELLOW}FE's Endpoint Status:{Style.RESET_ALL}")
         endpoint_mapping = {
             'chat_main': 'POST /chat/',
             'save_user_info': 'POST /save_user_info/',
@@ -425,19 +425,19 @@ class CompleteEndpointTester:
         
         # Final verdict
         print(f"\n{Fore.CYAN}{'='*70}{Style.RESET_ALL}")
-        if jonas_success_rate == 100:
-            print(f"{Fore.GREEN}🎉 ALL JONAS'S ENDPOINTS WORKING! Ready for frontend integration!{Style.RESET_ALL}")
-        elif jonas_success_rate >= 80:
+        if FE_success_rate == 100:
+            print(f"{Fore.GREEN}🎉 ALL FE'S ENDPOINTS WORKING! Ready for frontend integration!{Style.RESET_ALL}")
+        elif FE_success_rate >= 80:
             print(f"{Fore.YELLOW}⚠️  Most endpoints working but some issues need fixing{Style.RESET_ALL}")
         else:
             print(f"{Fore.RED}❌ Major issues - fix before frontend integration{Style.RESET_ALL}")
         print(f"{Fore.CYAN}{'='*70}{Style.RESET_ALL}")
         
         # Integration instructions
-        if jonas_success_rate == 100:
+        if FE_success_rate == 100:
             print(f"\n{Fore.GREEN}✅ Frontend Integration Instructions:{Style.RESET_ALL}")
             print(f"1. Base URL: {self.base_url}")
-            print(f"2. All Jonas's endpoints are functional")
+            print(f"2. All FE's endpoints are functional")
             print(f"3. Authentication is working (JWT tokens)")
             print(f"4. Chat history is properly stored and retrievable")
             print(f"5. User parameters are saved and retrieved correctly")
@@ -457,7 +457,7 @@ class CompleteEndpointTester:
                 return
         
         # Run tests
-        self.test_jonas_endpoints()
+        self.test_FE_endpoints()
         self.test_other_endpoints()
         
         # Generate report

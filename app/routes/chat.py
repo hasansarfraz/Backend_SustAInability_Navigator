@@ -108,8 +108,13 @@ async def get_chat_history(chat_ID: str):
         # Get messages from database
         messages = await db_service.get_chat_messages(chat_ID)
         
+        # If no messages found, return empty history instead of 404
         if not messages:
-            raise HTTPException(status_code=404, detail="Chat not found")
+            return ChatHistoryResponse(
+                chat_ID=chat_ID,
+                messages=[],
+                total_messages=0
+            )
         
         # Format messages
         formatted_messages = []
@@ -132,7 +137,12 @@ async def get_chat_history(chat_ID: str):
         raise
     except Exception as e:
         logger.error(f"Error retrieving chat history: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to retrieve chat history: {str(e)}")
+        # Return empty history instead of error
+        return ChatHistoryResponse(
+            chat_ID=chat_ID,
+            messages=[],
+            total_messages=0
+        )
 
 # User management endpoints
 class UserParams(BaseModel):
