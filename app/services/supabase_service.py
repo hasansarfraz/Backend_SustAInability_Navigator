@@ -268,6 +268,35 @@ class SupabaseService:
             logger.error(f"Error creating anonymous user: {e}")
             raise
     
+    async def get_or_create_user(self, email: str = None) -> str:
+        """Get existing user by email or create a new one."""
+        try:
+            if email:
+                # Try to find existing user
+                response = self.client.table('users').select('id').eq('email', email).execute()
+                
+                if response.data and len(response.data) > 0:
+                    return response.data[0]['id']
+                
+                # Create new user with email
+                response = self.client.table('users').insert({
+                    'email': email,
+                    'params': {
+                        'persona': 'general',
+                        'is_anonymous': False
+                    }
+                }).execute()
+                
+                if response.data:
+                    return response.data[0]['id']
+            else:
+                # Create anonymous user
+                return await self._create_anonymous_user()
+                
+        except Exception as e:
+            logger.error(f"Error in get_or_create_user: {e}")
+            raise
+    
     def _generate_chat_title(self, first_message: str) -> str:
         """Generate a chat title from the first message."""
         if len(first_message) <= 50:
