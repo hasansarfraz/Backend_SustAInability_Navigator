@@ -243,14 +243,15 @@ def _parse_ai_response(ai_result: Dict) -> Dict:
     if ai_result.get("recommendations"):
         marketplace_items = []
         for rec in ai_result["recommendations"][:3]:
-            item = MarketplaceItem(
-                id=rec.get("product_id", rec.get("name", "").lower().replace(" ", "_")),
-                name=rec.get("name", "Unknown Product"),
-                category=rec.get("category", "General"),
-                description=rec.get("description", ""),
-                url=rec.get("url"),
-                relevance_score=rec.get("relevance_score")
-            )
+            # Create dict instead of MarketplaceItem object
+            item = {
+                "id": rec.get("product_id", rec.get("name", "").lower().replace(" ", "_")),
+                "name": rec.get("name", "Unknown Product"),
+                "category": rec.get("category", "General"),
+                "description": rec.get("description", ""),
+                "url": rec.get("url"),
+                "relevance_score": rec.get("relevance_score")
+            }
             marketplace_items.append(item)
         
         if marketplace_items:
@@ -262,24 +263,25 @@ def _parse_ai_response(ai_result: Dict) -> Dict:
     # Check for DBO scenario suggestions
     if ai_result.get("dbo_suggestions"):
         for scenario_id in ai_result["dbo_suggestions"]:
-            action = UserAction(
-                action_id=f"select_dbo_{scenario_id}",
-                action_type="select_dbo_scenario",
-                action_label=f"Explore {scenario_id.replace('_', ' ').title()} Scenario",
-                action_data={"scenario_id": scenario_id}
-            )
+            # Create dict instead of UserAction object
+            action = {
+                "action_id": f"select_dbo_{scenario_id}",
+                "action_type": "select_dbo_scenario",
+                "action_label": f"Explore {scenario_id.replace('_', ' ').title()} Scenario",
+                "action_data": {"scenario_id": scenario_id}
+            }
             actions.append(action)
     
     # Add any custom actions from AI
     if ai_result.get("actions"):
         for ai_action in ai_result["actions"]:
             if isinstance(ai_action, dict):
-                action = UserAction(
-                    action_id=ai_action.get("action_id", "custom_action"),
-                    action_type=ai_action.get("action_type", "custom"),
-                    action_label=ai_action.get("action_label", "Take Action"),
-                    action_data=ai_action.get("action_data", {})
-                )
+                action = {
+                    "action_id": ai_action.get("action_id", "custom_action"),
+                    "action_type": ai_action.get("action_type", "custom"),
+                    "action_label": ai_action.get("action_label", "Take Action"),
+                    "action_data": ai_action.get("action_data", {})
+                }
                 actions.append(action)
     
     if actions:
