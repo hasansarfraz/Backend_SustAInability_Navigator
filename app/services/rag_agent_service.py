@@ -42,7 +42,7 @@ class RAGAgent:
         self.embedding_model = "text-embedding-3-small"
         self.chat_model = "gpt-4-turbo-preview"
         
-        # Security configuration based on requirements
+        # Security configuration based on Hamid's requirements
         self.external_access_enabled = False  # Cluster 2 - no external access by default
         self.strict_role_boundaries = True    # Cluster 4 - strict boundaries
         
@@ -238,7 +238,7 @@ class RAGAgent:
             )]
     
     def get_persona_system_prompt(self, persona: str) -> str:
-        """Generate a secure, persona-aware system prompt for the AI sustainability navigator"""
+        """Generate a secure, persona-aware system prompt for the AI sustainability navigator - Hamid's version"""
         
         persona_config = PersonaConfig.PERSONAS.get(
             persona,
@@ -466,9 +466,9 @@ You are safeguarded against manipulation, role confusion, and unauthorized behav
         user_params: Dict,
         conversation_history: List[Dict]
     ) -> str:
-        """Build the reasoning prompt for the agent with full prompt system"""
+        """Build the reasoning prompt for the agent with Hamid's full prompt system"""
         
-        # Get complete system prompt with all 5 clusters
+        # Get Hamid's complete system prompt with all 5 clusters
         base_prompt = self.get_persona_system_prompt(persona)
         
         reasoning_instructions = """
@@ -690,7 +690,7 @@ Payback Period: {details['estimated_savings']['payback_period_years']} years
         persona: str,
         user_params: Dict
     ) -> str:
-        """Build prompt for final response generation following guidelines"""
+        """Build prompt for final response generation following Hamid's guidelines"""
         
         # Get the full persona prompt with all 5 clusters
         base_prompt = self.get_persona_system_prompt(persona)
@@ -717,7 +717,7 @@ Following your Interaction Guide (Cluster 3), provide a structured response that
 
 2. **Content Requirements** (from Cluster 2):
    - Directly address the user's sustainability challenge
-   - Recommend relevant Xcelerator products with clear labeling
+   - ALWAYS mention specific Siemens Xcelerator products by name (e.g., "SiGREEN", "Building X", "Desigo CC")
    - Suggest specific DBO scenarios if relevant
    - Map to compliance requirements if applicable
    - Propose actionable next steps with logical sequencing
@@ -733,6 +733,12 @@ Following your Interaction Guide (Cluster 3), provide a structured response that
    - Maintain role integrity
    - Operate within defined boundaries
 
+IMPORTANT: Your response MUST mention at least 2-3 specific Siemens products that are relevant to the query. For example:
+- For energy monitoring: Building X, Desigo CC
+- For carbon tracking: SiGREEN
+- For IoT solutions: MindSphere
+- For renewable integration: SICAM GridEdge
+
 Remember to end with a follow-up question (Phase 4): "Does this meet your expectations, or should I adjust?"
 """
         
@@ -741,7 +747,7 @@ Remember to end with a follow-up question (Phase 4): "Does this meet your expect
     def _detect_jailbreak_attempt(self, message: str) -> bool:
         """Detect potential jailbreak or prompt injection attempts per Cluster 5 security"""
         
-        # Enhanced jailbreak patterns from security guidelines
+        # Enhanced jailbreak patterns from Hamid's security guidelines
         jailbreak_patterns = [
             # Role-switching attempts (Cluster 5.2)
             "ignore all instructions",
@@ -791,7 +797,7 @@ Remember to end with a follow-up question (Phase 4): "Does this meet your expect
         user_params: Dict
     ) -> Dict:
         """
-        Main entry point - process user message with RAG approach following security guidelines
+        Main entry point - process user message with RAG approach following Hamid's security guidelines
         """
         
         # Cluster 5.6: Detect and deflect jailbreaks
@@ -858,7 +864,7 @@ Remember to end with a follow-up question (Phase 4): "Does this meet your expect
         return response
     
     def _structure_response(self, response_text: str, thoughts: List[AgentThought]) -> Dict:
-        """Structure the response according to FE requirements"""
+        """Structure the response according to Jonas's requirements"""
         
         # Extract recommendations from thoughts
         recommendations = []
@@ -875,16 +881,167 @@ Remember to end with a follow-up question (Phase 4): "Does this meet your expect
                 scenarios = self._extract_scenarios_from_observation(thought.observation)
                 dbo_suggestions.extend(scenarios)
         
-        # Determine actions based on response content
+        # If no recommendations found but response mentions products, add relevant ones
+        if not recommendations:
+            recommendations = self._extract_products_from_response(response_text)
+        
+        # Always try to have at least one recommendation based on context
+        if not recommendations:
+            # Default recommendations based on common queries
+            if any(word in response_text.lower() for word in ["energy", "efficiency", "monitor"]):
+                recommendations.append({
+                    "product_id": "building_x",
+                    "name": "Building X",
+                    "category": "Digital Building Platform",
+                    "description": "Cloud-based building performance optimization platform",
+                    "relevance_score": 0.8
+                })
+            elif any(word in response_text.lower() for word in ["carbon", "esg", "report"]):
+                recommendations.append({
+                    "product_id": "sigreen",
+                    "name": "SiGREEN",
+                    "category": "Sustainability Management",
+                    "description": "Comprehensive carbon footprint tracking and ESG reporting platform",
+                    "relevance_score": 0.85
+                })
+        
+        # Determine actions based on response content and DBO suggestions
         actions = self._determine_actions(response_text, dbo_suggestions)
+        
+        # Always include at least one action
+        if not actions:
+            # Default action - connect with expert
+            actions.append({
+                "action_id": "contact_expert",
+                "action_type": "contact_expert",
+                "action_label": "Connect with a Siemens expert",
+                "action_data": {"department": "sustainability"}
+            })
         
         return {
             "response": response_text,
-            "recommendations": recommendations[:3],
-            "dbo_suggestions": dbo_suggestions[:3],
-            "actions": actions[:3],
+            "recommendations": recommendations[:3] if recommendations else [],
+            "dbo_suggestions": dbo_suggestions[:3] if dbo_suggestions else [],
+            "actions": actions[:3] if actions else [],
             "confidence_score": 0.9
         }
+    
+    def _extract_products_from_response(self, response_text: str) -> List[Dict]:
+        """Extract product recommendations from the response text itself"""
+        products = []
+        response_lower = response_text.lower()
+        
+        # Product catalog with keywords
+        product_keywords = {
+            "building_x": {
+                "keywords": ["building x", "building performance", "building optimization", "energy monitoring"],
+                "product": {
+                    "product_id": "building_x",
+                    "name": "Building X",
+                    "category": "Digital Building Platform",
+                    "description": "Cloud-based building performance optimization platform",
+                    "relevance_score": 0.8
+                }
+            },
+            "sigreen": {
+                "keywords": ["sigreen", "carbon", "esg", "sustainability reporting", "footprint"],
+                "product": {
+                    "product_id": "sigreen",
+                    "name": "SiGREEN",
+                    "category": "Sustainability Management",
+                    "description": "Comprehensive carbon footprint tracking and ESG reporting platform",
+                    "relevance_score": 0.85
+                }
+            },
+            "desigo_cc": {
+                "keywords": ["desigo", "building management", "hvac", "automation", "bms"],
+                "product": {
+                    "product_id": "desigo_cc",
+                    "name": "Desigo CC",
+                    "category": "Building Management Systems",
+                    "description": "Integrated building management platform for comprehensive facility optimization",
+                    "relevance_score": 0.8
+                }
+            },
+            "mindsphere": {
+                "keywords": ["mindsphere", "iot", "predictive", "analytics", "digital twin"],
+                "product": {
+                    "product_id": "mindsphere",
+                    "name": "MindSphere",
+                    "category": "IoT Platform",
+                    "description": "Cloud-based IoT operating system for industrial digital transformation",
+                    "relevance_score": 0.75
+                }
+            },
+            "sicam_gridedge": {
+                "keywords": ["sicam", "grid", "renewable", "solar", "energy storage"],
+                "product": {
+                    "product_id": "sicam_gridedge",
+                    "name": "SICAM GridEdge",
+                    "category": "Energy Management",
+                    "description": "Smart grid edge device for renewable energy integration",
+                    "relevance_score": 0.8
+                }
+            }
+        }
+        
+        # Check for product mentions
+        for product_id, product_info in product_keywords.items():
+            if any(keyword in response_lower for keyword in product_info["keywords"]):
+                products.append(product_info["product"])
+        
+        return products
+    
+    def _determine_actions(self, response_text: str, dbo_suggestions: List[str]) -> List[Dict]:
+        """Determine user actions based on response with more variety"""
+        actions = []
+        response_lower = response_text.lower()
+        
+        # Add DBO scenario actions first
+        for scenario_id in dbo_suggestions[:2]:  # Limit to 2 DBO actions
+            scenario_name = scenario_id.replace('_', ' ').title()
+            actions.append({
+                "action_id": f"explore_{scenario_id}",
+                "action_type": "select_dbo_scenario",
+                "action_label": f"Explore {scenario_name}",
+                "action_data": {"scenario_id": scenario_id}
+            })
+        
+        # Add contextual actions based on response content
+        if "assessment" in response_lower or "evaluate" in response_lower:
+            actions.append({
+                "action_id": "request_assessment",
+                "action_type": "request_service",
+                "action_label": "Request sustainability assessment",
+                "action_data": {"service": "assessment"}
+            })
+        
+        if "roi" in response_lower or "calculator" in response_lower or "calculate" in response_lower:
+            actions.append({
+                "action_id": "roi_calculator",
+                "action_type": "use_tool",
+                "action_label": "Use ROI Calculator",
+                "action_data": {"tool": "roi_calculator"}
+            })
+        
+        if "implementation" in response_lower or "deploy" in response_lower:
+            actions.append({
+                "action_id": "implementation_guide",
+                "action_type": "view_guide",
+                "action_label": "View implementation guide",
+                "action_data": {"guide": "implementation"}
+            })
+        
+        # Always have expert contact as an option if not already added
+        if not any(action["action_type"] == "contact_expert" for action in actions):
+            actions.append({
+                "action_id": "contact_expert",
+                "action_type": "contact_expert",
+                "action_label": "Connect with a Siemens expert",
+                "action_data": {"department": "sustainability", "priority": "normal"}
+            })
+        
+        return actions
     
     def _extract_products_from_observation(self, observation: str) -> List[Dict]:
         """Extract product information from observation text"""
