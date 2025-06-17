@@ -163,10 +163,13 @@ class SupabaseService:
                     'message_count': 1
                 }).execute()
             else:
-                # Update existing chat
+                # Update existing chat - use direct update instead of RPC
+                current_count_response = self.client.table('chats').select('message_count').eq('chat_id', chat_id).execute()
+                current_count = current_count_response.data[0]['message_count'] if current_count_response.data else 0
+                
                 self.client.table('chats').update({
                     'updated_at': datetime.now().isoformat(),
-                    'message_count': self.client.rpc('increment', {'x': 1, 'row_id': chat_response.data[0]['id']})
+                    'message_count': current_count + 1
                 }).eq('chat_id', chat_id).execute()
             
             # Save message
