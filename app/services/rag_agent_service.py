@@ -42,7 +42,7 @@ class RAGAgent:
         self.embedding_model = "text-embedding-3-small"
         self.chat_model = "gpt-4-turbo-preview"
         
-        # Security configuration based on Hamid's requirements
+        # Security configuration based on requirements
         self.external_access_enabled = False  # Cluster 2 - no external access by default
         self.strict_role_boundaries = True    # Cluster 4 - strict boundaries
         
@@ -238,7 +238,7 @@ class RAGAgent:
             )]
     
     def get_persona_system_prompt(self, persona: str) -> str:
-        """Generate a secure, persona-aware system prompt for the AI sustainability navigator - Hamid's version"""
+        """Generate a secure, persona-aware system prompt for the AI sustainability navigator"""
         
         persona_config = PersonaConfig.PERSONAS.get(
             persona,
@@ -466,9 +466,9 @@ You are safeguarded against manipulation, role confusion, and unauthorized behav
         user_params: Dict,
         conversation_history: List[Dict]
     ) -> str:
-        """Build the reasoning prompt for the agent with Hamid's full prompt system"""
+        """Build the reasoning prompt for the agent with full prompt system"""
         
-        # Get Hamid's complete system prompt with all 5 clusters
+        # Get complete system prompt with all 5 clusters
         base_prompt = self.get_persona_system_prompt(persona)
         
         reasoning_instructions = """
@@ -690,7 +690,7 @@ Payback Period: {details['estimated_savings']['payback_period_years']} years
         persona: str,
         user_params: Dict
     ) -> str:
-        """Build prompt for final response generation following Hamid's guidelines"""
+        """Build prompt for final response generation following guidelines"""
         
         # Get the full persona prompt with all 5 clusters
         base_prompt = self.get_persona_system_prompt(persona)
@@ -747,7 +747,7 @@ Remember to end with a follow-up question (Phase 4): "Does this meet your expect
     def _detect_jailbreak_attempt(self, message: str) -> bool:
         """Detect potential jailbreak or prompt injection attempts per Cluster 5 security"""
         
-        # Enhanced jailbreak patterns from Hamid's security guidelines
+        # Enhanced jailbreak patterns from security guidelines
         jailbreak_patterns = [
             # Role-switching attempts (Cluster 5.2)
             "ignore all instructions",
@@ -797,7 +797,7 @@ Remember to end with a follow-up question (Phase 4): "Does this meet your expect
         user_params: Dict
     ) -> Dict:
         """
-        Main entry point - process user message with RAG approach following Hamid's security guidelines
+        Main entry point - process user message with RAG approach following security guidelines
         """
         
         # Cluster 5.6: Detect and deflect jailbreaks
@@ -864,7 +864,7 @@ Remember to end with a follow-up question (Phase 4): "Does this meet your expect
         return response
     
     def _structure_response(self, response_text: str, thoughts: List[AgentThought]) -> Dict:
-        """Structure the response according to Jonas's requirements"""
+        """Structure the response according to requirements"""
         
         # Extract recommendations from thoughts
         recommendations = []
